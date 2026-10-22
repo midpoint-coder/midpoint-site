@@ -1,0 +1,634 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Midpoint Trading</title>
+<meta name="description" content="Midpoint Trading is a proprietary trading desk. Its pods build mid-frequency strategies in crypto, and the desk also funds outside quant teams.">
+<link rel="icon" href="logo.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Onest:wght@300..800&family=Piazzolla:ital,opsz,wght@1,8..30,300..600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --navy:#0d1b2a; --deep:#07111d; --panel:#0f2032; --panel-2:#13273c;
+  --line:rgba(255,255,255,.08); --line-2:rgba(255,255,255,.14);
+  --fg:#eef3f8; --mute:#93a5ba; --dim:#5a6b80;
+  --bid:#1fbf75; --ask:#e5484d; --mid:#5a6b80; --dot:#ffffff;
+  --sans:'Onest',system-ui,-apple-system,sans-serif;
+  --serif:'Piazzolla',Georgia,'Times New Roman',serif;
+  --mono:'JetBrains Mono',ui-monospace,SFMono-Regular,monospace;
+  --r-lg:28px; --r-md:18px; --r-sm:12px;
+  --gutter:clamp(16px,4vw,48px);
+  --max:1240px;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+body{
+  margin:0; background:var(--navy); color:var(--fg);
+  font-family:var(--sans); font-size:17px; line-height:1.6; font-weight:400;
+  -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale;
+  overflow-x:hidden;
+}
+a{color:inherit}
+::selection{background:var(--bid);color:#04120b}
+:focus-visible{outline:2px solid var(--bid);outline-offset:3px;border-radius:6px}
+
+/* grain over everything */
+body::before{
+  content:""; position:fixed; inset:0; pointer-events:none; z-index:50; opacity:.055;
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 1 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+  mix-blend-mode:screen;
+}
+
+.wrap{max-width:var(--max);margin:0 auto;padding:0 var(--gutter)}
+
+/* ---------- header ---------- */
+.top{
+  position:sticky; top:0; z-index:40;
+  padding:14px var(--gutter);
+  display:grid; grid-template-columns:1fr auto 1fr; align-items:center; gap:16px;
+  background:linear-gradient(to bottom,rgba(13,27,42,.92),rgba(13,27,42,.6) 70%,transparent);
+  backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px);
+}
+.brand{display:flex;align-items:center;gap:12px;text-decoration:none;font-weight:600;letter-spacing:-.01em;justify-self:start}
+.brand img{width:34px;height:34px;border-radius:8px;display:block;box-shadow:0 0 0 1px rgba(255,255,255,.06)}
+.brand span{white-space:nowrap}
+.pill{
+  position:relative; display:flex; gap:2px; padding:4px;
+  border:1px solid var(--line-2); border-radius:999px;
+  background:rgba(255,255,255,.04); backdrop-filter:blur(12px);
+}
+.pill a{
+  position:relative; z-index:1; text-decoration:none; color:var(--mute);
+  padding:8px 16px; border-radius:999px; font-size:15px; transition:color .25s;
+}
+.pill a:hover,.pill a.is-active{color:var(--fg)}
+.pill i{
+  position:absolute; top:4px; bottom:4px; left:0; width:0; border-radius:999px;
+  background:rgba(255,255,255,.1); transition:left .35s cubic-bezier(.2,.8,.2,1),width .35s cubic-bezier(.2,.8,.2,1),opacity .25s; opacity:0;
+}
+.top-right{display:flex;align-items:center;gap:10px;justify-self:end}
+.lang{
+  display:flex; border:1px solid var(--line-2); border-radius:999px; overflow:hidden; font-size:13px; font-weight:600;
+}
+.lang button{
+  all:unset; cursor:pointer; padding:7px 12px; color:var(--mute); transition:background .2s,color .2s;
+}
+.lang button[aria-pressed="true"]{background:rgba(255,255,255,.12);color:var(--fg)}
+.lang button:hover{color:var(--fg)}
+
+.btn{
+  --bg:var(--bid); --fgc:#04120b;
+  position:relative; display:inline-flex; align-items:center; gap:10px; overflow:hidden;
+  padding:13px 22px; border-radius:999px; text-decoration:none; font-weight:600; font-size:15.5px;
+  color:var(--fgc); background:var(--bg); border:1px solid transparent; isolation:isolate; white-space:nowrap;
+  transition:transform .25s cubic-bezier(.2,.8,.2,1), box-shadow .25s;
+}
+.btn::after{
+  content:""; position:absolute; inset:0; z-index:-1; border-radius:inherit;
+  background:#fff; transform:translateY(102%); transition:transform .35s cubic-bezier(.2,.8,.2,1);
+}
+.btn:hover{transform:translateY(-1px);box-shadow:0 10px 30px -10px rgba(31,191,117,.6)}
+.btn:hover::after{transform:translateY(0)}
+.btn.ghost{--bg:transparent;--fgc:var(--fg);border-color:var(--line-2)}
+.btn.ghost::after{background:rgba(255,255,255,.08)}
+.btn.ghost:hover{box-shadow:none}
+.btn.small{padding:9px 16px;font-size:14px}
+
+/* ---------- hero ---------- */
+.hero{
+  position:relative; margin:4px var(--gutter) 0; border-radius:var(--r-lg);
+  background:var(--deep); overflow:hidden; isolation:isolate;
+  min-height:min(88vh,860px);
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.05), 0 40px 80px -40px rgba(0,0,0,.6);
+}
+.hero .glow{position:absolute;inset:0;z-index:-1;pointer-events:none}
+.hero .glow i{position:absolute;border-radius:50%;filter:blur(90px);opacity:.75}
+.hero .glow .b{width:52vw;height:52vw;max-width:720px;max-height:720px;left:-14vw;bottom:-22vw;background:radial-gradient(circle,rgba(31,191,117,.55),rgba(31,191,117,0) 65%)}
+.hero .glow .a{width:40vw;height:40vw;max-width:560px;max-height:560px;right:-10vw;top:-16vw;background:radial-gradient(circle,rgba(229,72,77,.42),rgba(229,72,77,0) 65%)}
+.hero .glow .m{width:70vw;height:30vw;left:15vw;top:40%;background:radial-gradient(ellipse,rgba(90,107,128,.25),rgba(90,107,128,0) 70%)}
+.hero .glow svg{position:absolute;inset:0;width:100%;height:100%;opacity:.07}
+
+.hero-grid{
+  display:grid; grid-template-columns:minmax(0,1.05fr) minmax(0,.95fr); gap:clamp(24px,5vw,72px);
+  align-items:center; padding:clamp(56px,9vw,120px) clamp(24px,5vw,72px) clamp(40px,6vw,72px);
+}
+.tag{
+  display:inline-flex; align-items:center; gap:10px; padding:6px 14px 6px 8px;
+  border-radius:999px; background:rgba(255,255,255,.06); border:1px solid var(--line);
+  font-size:14px; color:var(--mute); margin-bottom:28px;
+}
+.tag b{
+  font-weight:600; color:#04120b; background:var(--bid); padding:2px 10px; border-radius:999px; font-size:13px;
+}
+h1{
+  margin:0 0 24px; font-weight:600; letter-spacing:-.035em; line-height:.96;
+  font-size:clamp(42px,6.4vw,88px);
+}
+html[lang=ru] h1{font-size:clamp(38px,5.6vw,76px)}
+h1 em{
+  display:block; font-family:var(--serif); font-style:italic; font-weight:400;
+  font-variation-settings:"opsz" 30; letter-spacing:-.015em; font-size:1.04em; line-height:.98;
+  color:var(--fg);
+}
+.lead{font-size:clamp(17px,1.5vw,20px);color:var(--mute);max-width:52ch;margin:0 0 36px;line-height:1.55}
+.cta{display:flex;flex-wrap:wrap;gap:12px}
+
+/* order book card */
+.book{
+  position:relative; border-radius:var(--r-md); padding:20px 20px 16px;
+  background:linear-gradient(160deg,rgba(255,255,255,.09),rgba(255,255,255,.03));
+  border:1px solid var(--line-2);
+  backdrop-filter:blur(18px); -webkit-backdrop-filter:blur(18px);
+  box-shadow:0 30px 60px -30px rgba(0,0,0,.7), inset 0 1px 0 rgba(255,255,255,.12);
+  font-family:var(--mono); font-size:13px; font-variant-numeric:tabular-nums;
+  transform:perspective(1200px) rotateX(var(--rx,0)) rotateY(var(--ry,0));
+  transition:transform .5s cubic-bezier(.2,.8,.2,1);
+  will-change:transform; width:100%; max-width:520px; margin-left:auto;
+}
+.book-head{display:flex;justify-content:space-between;align-items:center;color:var(--mute);margin-bottom:14px;font-family:var(--sans);font-size:13px}
+.book-head .live{display:inline-flex;align-items:center;gap:7px}
+.book-head .live i{width:7px;height:7px;border-radius:50%;background:var(--bid);box-shadow:0 0 0 0 rgba(31,191,117,.6);animation:pulse 1.8s infinite}
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(31,191,117,.55)}70%{box-shadow:0 0 0 9px rgba(31,191,117,0)}100%{box-shadow:0 0 0 0 rgba(31,191,117,0)}}
+.rows{display:grid;gap:3px}
+.row{
+  position:relative; display:grid; grid-template-columns:1fr auto; gap:12px; padding:5px 10px;
+  border-radius:6px; overflow:hidden; color:var(--mute); opacity:0; transform:translateY(6px);
+  animation:rowin .5s forwards;
+}
+.row .px{color:var(--fg)}
+.row .bar{position:absolute;top:0;bottom:0;width:var(--w,30%);opacity:.22;transition:width .6s cubic-bezier(.2,.8,.2,1)}
+.asks .row .bar{right:0;background:var(--ask);border-radius:6px 0 0 6px}
+.asks .row .px{color:#ff8b8f}
+.bids .row .bar{left:0;background:var(--bid);border-radius:0 6px 6px 0}
+.bids .row .px{color:#5fe0a3}
+.row.flash{background:rgba(255,255,255,.08)}
+@keyframes rowin{to{opacity:1;transform:none}}
+.mid{
+  display:grid; grid-template-columns:auto 1fr auto; align-items:center; gap:12px;
+  margin:10px 0; padding:8px 10px; border-top:1px solid var(--line); border-bottom:1px solid var(--line);
+}
+.mid .dot{width:12px;height:12px;border-radius:50%;background:var(--dot);box-shadow:0 0 0 4px rgba(255,255,255,.12),0 0 24px rgba(255,255,255,.5)}
+.mid .px{font-size:19px;color:var(--fg);font-weight:500}
+.mid .lbl{font-family:var(--sans);color:var(--dim);font-size:12px}
+.book-foot{display:flex;justify-content:space-between;margin-top:12px;color:var(--dim);font-family:var(--sans);font-size:12px}
+.book-foot b{color:var(--mute);font-weight:500}
+
+/* hero bottom strip */
+.strip{
+  display:grid; grid-template-columns:repeat(3,1fr); gap:0;
+  margin:0 clamp(24px,5vw,72px); border-top:1px solid var(--line);
+}
+.strip div{padding:22px 0;color:var(--mute);font-size:15px;line-height:1.45;max-width:30ch}
+.strip div + div{padding-left:28px;border-left:1px solid var(--line)}
+.strip div:nth-child(2){margin-left:28px}
+.strip div:nth-child(3){margin-left:28px}
+
+/* ---------- sections ---------- */
+section{padding:clamp(72px,10vw,140px) 0}
+.sec-head{max-width:62ch;margin-bottom:clamp(36px,5vw,64px)}
+h2{margin:0 0 16px;font-size:clamp(32px,4.4vw,56px);font-weight:600;letter-spacing:-.03em;line-height:1.02}
+h2 em{font-family:var(--serif);font-style:italic;font-weight:400;font-variation-settings:"opsz" 30;letter-spacing:-.01em}
+.sub{color:var(--mute);font-size:clamp(16px,1.3vw,19px);margin:0}
+
+/* split */
+.split{
+  position:relative; display:grid; grid-template-columns:1fr 1fr; gap:0;
+  border:1px solid var(--line); border-radius:var(--r-lg); overflow:hidden;
+  background:linear-gradient(90deg,rgba(31,191,117,.07),transparent 35%,transparent 65%,rgba(255,255,255,.04));
+}
+.split::before{
+  content:""; position:absolute; top:0; bottom:0; left:50%; width:1px; background:var(--line-2);
+}
+.split::after{
+  content:""; position:absolute; top:50%; left:50%; width:14px; height:14px; margin:-7px 0 0 -7px; border-radius:50%;
+  background:var(--dot); box-shadow:0 0 0 6px var(--navy),0 0 0 7px var(--line-2),0 0 30px rgba(255,255,255,.5);
+}
+.side{padding:clamp(28px,4vw,56px)}
+.side h3{margin:0 0 22px;font-size:14px;font-weight:600;color:var(--mute);display:flex;align-items:center;gap:10px}
+.side h3 i{width:10px;height:10px;border-radius:2px;background:var(--bid)}
+.side.desk h3 i{background:var(--dot)}
+.side ul{list-style:none;margin:0;padding:0;display:grid;gap:14px}
+.side li{
+  font-size:clamp(18px,1.6vw,22px); line-height:1.3; letter-spacing:-.01em; padding-left:0;
+  position:relative; transition:transform .3s cubic-bezier(.2,.8,.2,1),color .3s;
+}
+.side li small{display:block;color:var(--mute);font-size:15px;margin-top:4px;letter-spacing:0}
+.side li:hover{transform:translateX(6px)}
+.side.desk li:hover{transform:translateX(-6px)}
+.note{color:var(--mute);font-size:15.5px;max-width:64ch;margin:28px 0 0}
+
+/* pods */
+.pods{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.pod{
+  --mx:50%;--my:50%;
+  position:relative; padding:28px; border-radius:var(--r-md);
+  background:var(--panel); border:1px solid var(--line); overflow:hidden;
+  min-height:300px; display:flex; flex-direction:column; gap:14px;
+  transition:border-color .3s, transform .4s cubic-bezier(.2,.8,.2,1);
+}
+.pod::before{
+  content:""; position:absolute; inset:0; pointer-events:none; opacity:0; transition:opacity .4s;
+  background:radial-gradient(360px circle at var(--mx) var(--my),rgba(31,191,117,.16),transparent 55%);
+}
+.pod:hover{border-color:var(--line-2);transform:translateY(-3px)}
+.pod:hover::before{opacity:1}
+.pod.open{background:transparent;border-style:dashed}
+.pod.open::before{background:radial-gradient(360px circle at var(--mx) var(--my),rgba(255,255,255,.08),transparent 55%)}
+.pod .st{display:inline-flex;align-items:center;gap:8px;font-size:13px;color:var(--mute);font-weight:500}
+.pod .st i{width:8px;height:8px;border-radius:50%;background:var(--dim)}
+.pod .st.run i{background:var(--bid);box-shadow:0 0 10px rgba(31,191,117,.8)}
+.pod .st.open i{background:var(--dot)}
+.pod h3{margin:6px 0 0;font-size:clamp(22px,2vw,27px);letter-spacing:-.02em;line-height:1.15;font-weight:600}
+.pod p{margin:0;color:var(--mute);font-size:15.5px;line-height:1.5}
+.pod .tags{margin-top:auto;display:flex;flex-wrap:wrap;gap:6px;padding-top:12px}
+.pod .tags span{font-size:12.5px;padding:4px 10px;border-radius:999px;border:1px solid var(--line-2);color:var(--mute)}
+
+/* steps */
+.steps{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;position:relative}
+.steps::before{content:"";position:absolute;left:14px;right:14px;top:17px;height:1px;background:var(--line-2)}
+.step{position:relative;padding-top:48px}
+.step i{
+  position:absolute; top:4px; left:0; width:28px; height:28px; border-radius:50%;
+  background:var(--navy); border:1px solid var(--line-2); display:grid; place-items:center;
+  font-style:normal; font-size:12.5px; font-weight:600; color:var(--mute); transition:background .3s,color .3s,border-color .3s;
+}
+.step:hover i{background:var(--bid);color:#04120b;border-color:var(--bid)}
+.step h3{margin:0 0 10px;font-size:21px;font-weight:600;letter-spacing:-.02em}
+.step p{margin:0;color:var(--mute);font-size:15.5px;line-height:1.5}
+
+/* contact */
+.contact{
+  position:relative; border-radius:var(--r-lg); overflow:hidden; isolation:isolate;
+  background:var(--deep); padding:clamp(48px,7vw,96px) clamp(24px,5vw,72px); text-align:left;
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.05);
+}
+.contact .glow{position:absolute;inset:0;z-index:-1;pointer-events:none}
+.contact .glow i{position:absolute;border-radius:50%;filter:blur(90px);opacity:.5}
+.contact .glow .b{width:40vw;height:40vw;max-width:560px;max-height:560px;right:-10vw;bottom:-20vw;background:radial-gradient(circle,rgba(31,191,117,.5),transparent 65%)}
+.contact h2{max-width:14ch}
+.contact .mail{
+  display:inline-block; margin:28px 0 10px; font-size:clamp(22px,3.4vw,44px); font-weight:500; letter-spacing:-.03em;
+  text-decoration:none; position:relative;
+}
+.contact .mail::after{
+  content:""; position:absolute; left:0; right:0; bottom:-4px; height:2px; background:var(--bid);
+  transform:scaleX(0); transform-origin:left; transition:transform .4s cubic-bezier(.2,.8,.2,1);
+}
+.contact .mail:hover::after{transform:scaleX(1)}
+.contact .links{display:flex;flex-wrap:wrap;gap:10px;margin-top:22px}
+
+footer{padding:36px var(--gutter) 48px;color:var(--dim);font-size:14px;display:flex;flex-wrap:wrap;gap:8px 24px;justify-content:space-between;align-items:center}
+footer .l{display:flex;gap:18px;flex-wrap:wrap}
+footer a{color:var(--mute);text-decoration:none}
+footer a:hover{color:var(--fg)}
+
+/* reveal on scroll (one subtle pass) */
+.rv{opacity:0;transform:translateY(14px);transition:opacity .7s ease,transform .7s cubic-bezier(.2,.8,.2,1)}
+.rv.in{opacity:1;transform:none}
+.hero .rv:nth-child(1){transition-delay:.05s}
+@media (prefers-reduced-motion:reduce){
+  .rv{opacity:1;transform:none;transition:none}
+  .row{animation:none;opacity:1;transform:none}
+  .book{transform:none!important}
+  .book-head .live i{animation:none}
+  *{transition-duration:.01ms!important}
+}
+
+/* ---------- responsive ---------- */
+@media (max-width:980px){
+  .hero-grid{grid-template-columns:1fr}
+  .book{margin:0 auto;max-width:560px}
+  .pods{grid-template-columns:1fr 1fr}
+  .steps{grid-template-columns:1fr 1fr;gap:28px 24px}
+  .steps::before{display:none}
+}
+@media (max-width:1100px){
+  .top .btn{display:none}
+  .pill a{padding:8px 12px;font-size:14px}
+}
+@media (max-width:820px){
+  .top{grid-template-columns:1fr auto}
+  .pill{display:none}
+}
+@media (max-width:680px){
+  .hero{margin:0 var(--gutter);border-radius:22px}
+  .strip{grid-template-columns:1fr}
+  .strip div{padding:16px 0;max-width:none}
+  .strip div + div{padding-left:0;border-left:0;border-top:1px solid var(--line)}
+  .strip div:nth-child(2),.strip div:nth-child(3){margin-left:0}
+  .split{grid-template-columns:1fr}
+  .split::before,.split::after{display:none}
+  .side.desk{border-top:1px solid var(--line-2)}
+  .side li:hover,.side.desk li:hover{transform:none}
+  .pods{grid-template-columns:1fr}
+  .pod{min-height:0}
+  .steps{grid-template-columns:1fr}
+  .brand span{font-size:15px}
+}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <a class="brand" href="#top" aria-label="Midpoint Trading">
+    <img src="logo.svg" alt="">
+    <span>Midpoint Trading</span>
+  </a>
+  <nav class="pill" aria-label="Sections">
+    <i></i>
+    <a href="#desk" data-i18n="nav.desk">Desk</a>
+    <a href="#model" data-i18n="nav.model">What we do</a>
+    <a href="#pods" data-i18n="nav.pods">Pods</a>
+    <a href="#process" data-i18n="nav.process">For quants</a>
+    <a href="#contact" data-i18n="nav.contact">Contact</a>
+  </nav>
+  <div class="top-right">
+    <div class="lang" role="group" aria-label="Language">
+      <button type="button" data-lang="en" aria-pressed="true">EN</button>
+      <button type="button" data-lang="ru" aria-pressed="false">RU</button>
+    </div>
+    <a class="btn small" href="#contact" data-i18n="nav.cta">Write to us</a>
+  </div>
+</header>
+
+<main id="top">
+<div class="hero" id="desk">
+  <div class="glow" aria-hidden="true">
+    <i class="b"></i><i class="a"></i><i class="m"></i>
+    <svg viewBox="0 0 100 100" preserveAspectRatio="none"><path d="M0 62 C20 58 30 70 45 52 S70 40 100 44" fill="none" stroke="#fff" stroke-width=".25"/><path d="M0 70 C25 66 35 80 50 60 S75 48 100 52" fill="none" stroke="#fff" stroke-width=".25"/></svg>
+  </div>
+  <div class="hero-grid">
+    <div>
+      <div class="tag rv" data-rv><b data-i18n="tag.b">2026</b><span data-i18n="tag.t">Proprietary trading desk, crypto first</span></div>
+      <h1 class="rv" data-rv><span data-i18n="h1.a">We trade.</span><em data-i18n="h1.b">We also fund those who do.</em></h1>
+      <p class="lead rv" data-rv data-i18n="lead">Midpoint Trading is a proprietary trading desk. Our pods build mid-frequency strategies in crypto and run them on the desk's own capital. Alongside that we fund outside quant teams: they bring a strategy, we put capital, exchange terms and infrastructure behind it, and we share the result.</p>
+      <div class="cta rv" data-rv>
+        <a class="btn" href="#contact" data-i18n="cta.1">Get your strategy funded</a>
+        <a class="btn ghost" href="#model" data-i18n="cta.2">What we do</a>
+      </div>
+    </div>
+    <div class="book rv" data-rv id="book" aria-label="Demo order book">
+      <div class="book-head"><span>BTC-USDT <span data-i18n="book.perp">perp</span></span><span class="live"><i></i><span data-i18n="book.demo">demo book</span></span></div>
+      <div class="rows asks" id="asks"></div>
+      <div class="mid"><span class="dot"></span><span class="px" id="midpx">—</span><span class="lbl" data-i18n="book.mid">midpoint</span></div>
+      <div class="rows bids" id="bids"></div>
+      <div class="book-foot"><span data-i18n="book.spread">spread</span> <b id="spread">—</b> <span data-i18n="book.imb">imbalance</span> <b id="imb">—</b></div>
+    </div>
+  </div>
+  <div class="strip">
+    <div data-i18n="strip.1">Mid-frequency. Positions live from minutes to days, not microseconds.</div>
+    <div data-i18n="strip.2">Crypto first. Moscow Exchange and other markets are on the table when the method holds.</div>
+    <div data-i18n="strip.3">Own capital. The desk trades its own money and carries the trading risk itself.</div>
+  </div>
+</div>
+
+<section id="model">
+  <div class="wrap">
+    <div class="sec-head rv" data-rv>
+      <h2><span data-i18n="model.h.a">Two things</span> <em data-i18n="model.h.b">we do</em></h2>
+      <p class="sub" data-i18n="model.sub">We build and run our own strategies, and we put capital behind other people's. Both sit on the same book, under the same risk layer.</p>
+    </div>
+    <div class="split rv" data-rv>
+      <div class="side you">
+        <h3><i></i><span data-i18n="you.h">We build strategies</span></h3>
+        <ul>
+          <li data-i18n="you.1">Mid-frequency: holding periods from minutes to days</li>
+          <li data-i18n="you.2">Crypto first: centralised exchanges and perp DEXs</li>
+          <li data-i18n="you.3">Pods with their own direction, sharing capital and the risk layer</li>
+        </ul>
+      </div>
+      <div class="side desk">
+        <h3><i></i><span data-i18n="desk.h">We fund quants</span></h3>
+        <ul>
+          <li data-i18n="desk.1">An outside team brings a strategy with a verifiable track record</li>
+          <li data-i18n="desk.2">The desk puts capital, exchange accounts and infrastructure behind it</li>
+          <li data-i18n="desk.3">Trading risk stays with the desk</li>
+          <li data-i18n="desk.4">Limits, a daily stop and a kill switch are set together</li>
+          <li data-i18n="desk.5">The team gets a share of net PnL</li>
+        </ul>
+      </div>
+    </div>
+    <p class="note rv" data-rv data-i18n="model.note">The desk trades its own capital. Its founder also owns KART Strategy, a crypto brokerage with more than a thousand active traders, which is where the exchange relationships and institutional contacts come from.</p>
+  </div>
+</section>
+
+<section id="pods">
+  <div class="wrap">
+    <div class="sec-head rv" data-rv>
+      <h2 data-i18n="pods.h">Pods</h2>
+      <p class="sub" data-i18n="pods.sub">The desk is a set of pods. Each has its own direction and its own market. Capital and the risk layer are shared, nothing else is. Outside teams we fund get a pod of their own.</p>
+    </div>
+    <div class="pods">
+      <article class="pod rv" data-rv>
+        <span class="st run"><i></i><span data-i18n="pod1.st">running</span></span>
+        <h3 data-i18n="pod1.h">Short alphas, crypto</h3>
+        <p data-i18n="pod1.p">Short-lived inefficiencies on centralised exchanges and perp DEXs. Fully automated, from signal to fill.</p>
+        <div class="tags"><span>CEX</span><span>perp DEX</span><span data-i18n="pod1.t3">automation</span></div>
+      </article>
+      <article class="pod rv" data-rv>
+        <span class="st"><i></i><span data-i18n="pod2.st">staffing</span></span>
+        <h3 data-i18n="pod2.h">Quantitative, with capacity</h3>
+        <p data-i18n="pod2.p">Strategies that can take size: momentum, funding, basis, volatility, statistical arbitrage.</p>
+        <div class="tags"><span data-i18n="pod2.t1">momentum</span><span data-i18n="pod2.t2">funding</span><span data-i18n="pod2.t3">basis</span><span data-i18n="pod2.t4">stat arb</span></div>
+      </article>
+      <article class="pod open rv" data-rv>
+        <span class="st open"><i></i><span data-i18n="pod3.st">open</span></span>
+        <h3 data-i18n="pod3.h">Outside pods</h3>
+        <p data-i18n="pod3.p">Quant teams funded by the desk. Any market where the method holds up: crypto first, Moscow Exchange and other venues on the same terms.</p>
+        <div class="tags"><span data-i18n="pod3.t1">external teams</span><span data-i18n="pod3.t2">PnL share</span></div>
+      </article>
+    </div>
+  </div>
+</section>
+
+<section id="process">
+  <div class="wrap">
+    <div class="sec-head rv" data-rv>
+      <h2><span data-i18n="proc.h.a">For outside quants:</span> <em data-i18n="proc.h.b">how funding works</em></h2>
+      <p class="sub" data-i18n="proc.sub">If you run a strategy and want capital behind it, this is the route. Four steps, and none of them asks you to put in your own money.</p>
+    </div>
+    <div class="steps rv" data-rv>
+      <div class="step"><i>1</i><h3 data-i18n="s1.h">A conversation</h3><p data-i18n="s1.p">What the strategy does, where it trades, what its capacity is, what stopped working along the way and how you noticed.</p></div>
+      <div class="step"><i>2</i><h3 data-i18n="s2.h">Verification</h3><p data-i18n="s2.p">A read-only API key to the account, or an export from the exchange's own interface with the account ID visible. We pull the fills ourselves and compute the metrics from raw executions. A file prepared by the team is not evidence.</p></div>
+      <div class="step"><i>3</i><h3 data-i18n="s3.h">Forward test</h3><p data-i18n="s3.p">The strategy runs on our infrastructure, as a black box if the team prefers.</p></div>
+      <div class="step"><i>4</i><h3 data-i18n="s4.h">Allocation</h3><p data-i18n="s4.p">Size set by capacity, risk limits agreed, the team's share written down. Size grows with results.</p></div>
+    </div>
+  </div>
+</section>
+
+
+<section id="contact">
+  <div class="wrap">
+    <div class="contact rv" data-rv>
+      <div class="glow" aria-hidden="true"><i class="b"></i></div>
+      <h2><span data-i18n="ct.h.a">Two paragraphs</span> <em data-i18n="ct.h.b">are enough to start</em></h2>
+      <p class="sub" data-i18n="ct.sub">A question, a partnership, or a strategy you want funded. Say what it is and where it trades. We reply within a few days.</p>
+      <a class="mail" href="mailto:hello@midpointtrading.io">hello@midpointtrading.io</a>
+      <div class="links">
+        <a class="btn" href="mailto:hello@midpointtrading.io" data-i18n="ct.btn">Write to us</a>
+        <a class="btn ghost" href="https://x.com/IlyaWies" rel="noopener" target="_blank">X</a>
+      </div>
+    </div>
+  </div>
+</section>
+</main>
+
+<footer>
+  <div class="l"><span>© 2026 Midpoint Trading</span><span data-i18n="ft.1">Remote desk</span></div>
+  <div class="l"><a href="mailto:hello@midpointtrading.io">hello@midpointtrading.io</a><a href="https://x.com/IlyaWies" rel="noopener" target="_blank">x.com/IlyaWies</a></div>
+</footer>
+
+<script>
+/* ---------- i18n ---------- */
+const T = {
+en:{
+ "title":"Midpoint Trading",
+ "nav.desk":"Desk","nav.model":"What we do","nav.pods":"Pods","nav.process":"For quants","nav.contact":"Contact","nav.cta":"Write to us",
+ "tag.b":"2026","tag.t":"Proprietary trading desk, crypto first",
+ "h1.a":"We trade.","h1.b":"We also fund those who do.",
+ "lead":"Midpoint Trading is a proprietary trading desk. Our pods build mid-frequency strategies in crypto and run them on the desk's own capital. Alongside that we fund outside quant teams: they bring a strategy, we put capital, exchange terms and infrastructure behind it, and we share the result.",
+ "cta.1":"Get your strategy funded","cta.2":"What we do",
+ "book.perp":"perp","book.demo":"demo book","book.mid":"midpoint","book.spread":"spread","book.imb":"imbalance",
+ "strip.1":"Mid-frequency. Positions live from minutes to days, not microseconds.",
+ "strip.2":"Crypto first. Moscow Exchange and other markets are on the table when the method holds.",
+ "strip.3":"Own capital. The desk trades its own money and carries the trading risk itself.",
+ "model.h.a":"Two things","model.h.b":"we do",
+ "model.sub":"We build and run our own strategies, and we put capital behind other people's. Both sit on the same book, under the same risk layer.",
+ "you.h":"We build strategies","you.1":"Mid-frequency: holding periods from minutes to days","you.2":"Crypto first: centralised exchanges and perp DEXs","you.3":"Pods with their own direction, sharing capital and the risk layer",
+ "desk.h":"We fund quants","desk.1":"An outside team brings a strategy with a verifiable track record","desk.2":"The desk puts capital, exchange accounts and infrastructure behind it","desk.3":"Trading risk stays with the desk","desk.4":"Limits, a daily stop and a kill switch are set together","desk.5":"The team gets a share of net PnL",
+ "model.note":"The desk trades its own capital. Its founder also owns KART Strategy, a crypto brokerage with more than a thousand active traders, which is where the exchange relationships and institutional contacts come from.",
+ "pods.h":"Pods","pods.sub":"The desk is a set of pods. Each has its own direction and its own market. Capital and the risk layer are shared, nothing else is. Outside teams we fund get a pod of their own.",
+ "pod1.st":"running","pod1.h":"Short alphas, crypto","pod1.p":"Short-lived inefficiencies on centralised exchanges and perp DEXs. Fully automated, from signal to fill.","pod1.t3":"automation",
+ "pod2.st":"staffing","pod2.h":"Quantitative, with capacity","pod2.p":"Strategies that can take size: momentum, funding, basis, volatility, statistical arbitrage.","pod2.t1":"momentum","pod2.t2":"funding","pod2.t3":"basis","pod2.t4":"stat arb",
+ "pod3.st":"open","pod3.h":"Outside pods","pod3.p":"Quant teams funded by the desk. Any market where the method holds up: crypto first, Moscow Exchange and other venues on the same terms.","pod3.t1":"external teams","pod3.t2":"PnL share",
+ "proc.h.a":"For outside quants:","proc.h.b":"how funding works","proc.sub":"If you run a strategy and want capital behind it, this is the route. Four steps, and none of them asks you to put in your own money.",
+ "s1.h":"A conversation","s1.p":"What the strategy does, where it trades, what its capacity is, what stopped working along the way and how you noticed.",
+ "s2.h":"Verification","s2.p":"A read-only API key to the account, or an export from the exchange's own interface with the account ID visible. We pull the fills ourselves and compute the metrics from raw executions. A file prepared by the team is not evidence.",
+ "s3.h":"Forward test","s3.p":"The strategy runs on our infrastructure, as a black box if the team prefers.",
+ "s4.h":"Allocation","s4.p":"Size set by capacity, risk limits agreed, the team's share written down. Size grows with results.",
+ "ct.h.a":"Two paragraphs","ct.h.b":"are enough to start","ct.sub":"A question, a partnership, or a strategy you want funded. Say what it is and where it trades. We reply within a few days.","ct.btn":"Write to us",
+ "ft.1":"Remote desk"
+},
+ru:{
+ "title":"Midpoint Trading",
+ "nav.desk":"Деск","nav.model":"Чем занимаемся","nav.pods":"Поды","nav.process":"Квантам","nav.contact":"Контакт","nav.cta":"Написать нам",
+ "tag.b":"2026","tag.t":"Проприетарный торговый деск, крипта в первую очередь",
+ "h1.a":"Мы торгуем.","h1.b":"И финансируем квантов.",
+ "lead":"Midpoint Trading — проприетарный торговый деск. Наши поды разрабатывают среднечастотные стратегии в крипте и торгуют ими на собственном капитале деска. Параллельно мы финансируем сторонних квантов: они приносят стратегию, мы ставим под неё капитал, условия на биржах и инфраструктуру и делим результат.",
+ "cta.1":"Получить финансирование","cta.2":"Чем занимаемся",
+ "book.perp":"перп","book.demo":"демо-стакан","book.mid":"midpoint","book.spread":"спред","book.imb":"дисбаланс",
+ "strip.1":"Средняя частота. Позиции живут от минут до дней, не микросекунды.",
+ "strip.2":"Сначала крипта. Мосбиржа и другие рынки рассматриваются, если метод на них держится.",
+ "strip.3":"Собственный капитал. Деск торгует своими деньгами и сам несёт торговый риск.",
+ "model.h.a":"Два направления,","model.h.b":"одна книга",
+ "model.sub":"Мы строим и ведём собственные стратегии и ставим капитал под чужие. И то и другое сидит на одной книге, под одним контуром риска.",
+ "you.h":"Разрабатываем стратегии","you.1":"Средняя частота: позиции от минут до дней","you.2":"Сначала крипта: централизованные биржи и перп-DEX","you.3":"Поды со своим направлением, общие капитал и контур риска",
+ "desk.h":"Финансируем квантов","desk.1":"Сторонняя команда приносит стратегию с проверяемым треком","desk.2":"Деск ставит под неё капитал, биржевые счета и инфраструктуру","desk.3":"Торговый риск остаётся на деске","desk.4":"Лимиты, дневной стоп и kill switch задаются вместе","desk.5":"Команда получает долю от чистого PnL",
+ "model.note":"Деск торгует собственным капиталом. Его основатель также владеет крипто-брокером KART Strategy, где больше тысячи активных трейдеров; оттуда отношения с биржами и их институциональными отделами.",
+ "pods.h":"Поды","pods.sub":"Деск устроен как набор подов. У каждого своё направление и свой рынок. Общие только капитал и контур риска. Сторонние команды, которые мы финансируем, получают собственный под.",
+ "pod1.st":"работает","pod1.h":"Короткие альфы, крипта","pod1.p":"Короткоживущие неэффективности на централизованных биржах и перп-DEX. Полная автоматизация от сигнала до исполнения.","pod1.t3":"автоматизация",
+ "pod2.st":"набираем","pod2.h":"Количественные, с ёмкостью","pod2.p":"Стратегии, которые выдерживают размер: моментум, фандинг, базис, волатильность, статистический арбитраж.","pod2.t1":"моментум","pod2.t2":"фандинг","pod2.t3":"базис","pod2.t4":"стат-арб",
+ "pod3.st":"открыт","pod3.h":"Внешние поды","pod3.p":"Квант-команды, которые финансирует деск. Любой рынок, где метод держится: сначала крипта, Мосбиржа и другие площадки на тех же условиях.","pod3.t1":"внешние команды","pod3.t2":"доля от PnL",
+ "proc.h.a":"Сторонним квантам:","proc.h.b":"как устроено финансирование","proc.sub":"Если у вас есть стратегия и нужен капитал под неё, путь такой. Четыре шага, и ни один не требует вложить свои деньги.",
+ "s1.h":"Разговор","s1.p":"Что делает стратегия, где торгует, какая у неё ёмкость, что переставало работать по дороге и как вы это заметили.",
+ "s2.h":"Проверка","s2.p":"Read-only ключ к счёту или выгрузка из интерфейса биржи с видимым ID счёта. Сделки тянем сами, метрики считаем из сырых исполнений. Файл, собранный командой, доказательством не считаем.",
+ "s3.h":"Форвард-тест","s3.p":"Стратегия идёт на нашей инфраструктуре, при желании команды как чёрный ящик.",
+ "s4.h":"Аллокация","s4.p":"Размер по ёмкости, лимиты риска согласованы, доля команды записана. Дальше размер растёт за результатом.",
+ "ct.h.a":"Двух абзацев","ct.h.b":"хватит, чтобы начать","ct.sub":"Вопрос, партнёрство или стратегия, под которую нужен капитал. Напишите, что это и где торгует. Отвечаем в течение нескольких дней.","ct.btn":"Написать нам",
+ "ft.1":"Удалённый деск"
+}};
+function setLang(l){
+  const d=T[l]||T.en;
+  document.querySelectorAll('[data-i18n]').forEach(el=>{const k=el.dataset.i18n; if(d[k]!=null) el.textContent=d[k];});
+  document.documentElement.lang=l;
+  document.querySelectorAll('.lang button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.lang===l)));
+  try{localStorage.setItem('mpt-lang',l)}catch(e){}
+  requestAnimationFrame(syncPill);
+}
+document.querySelectorAll('.lang button').forEach(b=>b.addEventListener('click',()=>setLang(b.dataset.lang)));
+(function(){
+  let l='en';
+  try{const q=new URLSearchParams(location.search).get('lang'); const s=localStorage.getItem('mpt-lang');
+      l=q||s||((navigator.language||'').toLowerCase().startsWith('ru')?'ru':'en');}catch(e){}
+  if(!T[l]) l='en';
+  setLang(l);
+})();
+
+/* ---------- nav pill indicator ---------- */
+const pill=document.querySelector('.pill'), ind=pill.querySelector('i'), links=[...pill.querySelectorAll('a')];
+let activeLink=null;
+function moveTo(a){ if(!a){ind.style.opacity=0;return;} const r=a.getBoundingClientRect(), p=pill.getBoundingClientRect();
+  ind.style.left=(r.left-p.left)+'px'; ind.style.width=r.width+'px'; ind.style.opacity=1; }
+function syncPill(){moveTo(activeLink)}
+links.forEach(a=>{a.addEventListener('mouseenter',()=>moveTo(a)); });
+pill.addEventListener('mouseleave',()=>moveTo(activeLink));
+const secs=links.map(a=>document.querySelector(a.getAttribute('href')));
+const io=new IntersectionObserver(es=>{es.forEach(e=>{if(e.isIntersecting){const i=secs.indexOf(e.target); activeLink=links[i]; links.forEach(x=>x.classList.toggle('is-active',x===activeLink)); moveTo(activeLink);}})},{rootMargin:'-40% 0px -55% 0px'});
+secs.forEach(s=>s&&io.observe(s));
+window.addEventListener('resize',syncPill);
+
+/* ---------- reveal ---------- */
+const rv=[...document.querySelectorAll('[data-rv]')];
+const ro=new IntersectionObserver(es=>{es.forEach((e,i)=>{if(e.isIntersecting){e.target.classList.add('in');ro.unobserve(e.target)}})},{threshold:.12});
+rv.forEach((el,i)=>{
+  if(el.closest('.hero')){ el.style.transitionDelay=(i*90)+'ms'; requestAnimationFrame(()=>requestAnimationFrame(()=>el.classList.add('in'))); }
+  else ro.observe(el);
+});
+
+/* ---------- demo order book ---------- */
+const N=6, TICK=0.5;
+let mid=67420 + Math.random()*400;
+const asks=[], bids=[];
+const elA=document.getElementById('asks'), elB=document.getElementById('bids');
+const fmt=n=>n.toLocaleString('en-US',{minimumFractionDigits:1,maximumFractionDigits:1});
+const fsz=n=>n.toFixed(3);
+function mk(side,i){
+  const r=document.createElement('div'); r.className='row'; r.style.animationDelay=(side==='a'?(N-1-i):i)*70+250+'ms';
+  r.innerHTML='<span class="px"></span><span class="sz"></span><i class="bar"></i>'; return r;
+}
+for(let i=N-1;i>=0;i--){const r=mk('a',i); asks[i]={el:r,sz:0}; elA.appendChild(r);}
+for(let i=0;i<N;i++){const r=mk('b',i); bids[i]={el:r,sz:0}; elB.appendChild(r);}
+function sizes(arr){ arr.forEach((o,i)=>{ o.sz=Math.max(.05,(0.3+Math.random()*1.6)*(1+i*0.35)); }); }
+sizes(asks); sizes(bids);
+function render(){
+  const mx=Math.max(...asks.map(o=>o.sz),...bids.map(o=>o.sz));
+  let ta=0,tb=0;
+  asks.forEach((o,i)=>{o.el.querySelector('.px').textContent=fmt(mid+TICK*(i+1)); o.el.querySelector('.sz').textContent=fsz(o.sz); o.el.querySelector('.bar').style.setProperty('--w',(o.sz/mx*100)+'%'); ta+=o.sz;});
+  bids.forEach((o,i)=>{o.el.querySelector('.px').textContent=fmt(mid-TICK*(i+1)); o.el.querySelector('.sz').textContent=fsz(o.sz); o.el.querySelector('.bar').style.setProperty('--w',(o.sz/mx*100)+'%'); tb+=o.sz;});
+  document.getElementById('midpx').textContent=fmt(mid);
+  document.getElementById('spread').textContent=(TICK*2).toFixed(1);
+  const imb=(tb-ta)/(tb+ta); document.getElementById('imb').textContent=(imb>=0?'+':'')+(imb*100).toFixed(0)+'%';
+}
+render();
+const motionOK=!matchMedia('(prefers-reduced-motion:reduce)').matches;
+if(motionOK){
+  setInterval(()=>{
+    const k=Math.random();
+    if(k<0.35){ mid+=(Math.random()<.5?-1:1)*TICK; }
+    const side=Math.random()<.5?asks:bids; const i=Math.floor(Math.random()*N);
+    side[i].sz=Math.max(.05, side[i].sz*(0.6+Math.random()*0.9));
+    if(Math.random()<.3){ const j=Math.floor(Math.random()*N); const s2=Math.random()<.5?asks:bids; s2[j].el.classList.add('flash'); setTimeout(()=>s2[j].el.classList.remove('flash'),180); }
+    render();
+  },650);
+}
+
+/* ---------- pointer effects ---------- */
+const book=document.getElementById('book');
+if(motionOK && matchMedia('(hover:hover)').matches){
+  const hero=document.querySelector('.hero');
+  hero.addEventListener('mousemove',e=>{
+    const r=book.getBoundingClientRect(); const cx=r.left+r.width/2, cy=r.top+r.height/2;
+    const dx=(e.clientX-cx)/window.innerWidth, dy=(e.clientY-cy)/window.innerHeight;
+    book.style.setProperty('--ry',(dx*6)+'deg'); book.style.setProperty('--rx',(-dy*6)+'deg');
+  });
+  hero.addEventListener('mouseleave',()=>{book.style.setProperty('--ry','0deg');book.style.setProperty('--rx','0deg');});
+  document.querySelectorAll('.pod').forEach(p=>p.addEventListener('mousemove',e=>{
+    const r=p.getBoundingClientRect(); p.style.setProperty('--mx',(e.clientX-r.left)+'px'); p.style.setProperty('--my',(e.clientY-r.top)+'px');
+  }));
+}
+</script>
+</body>
+</html>
